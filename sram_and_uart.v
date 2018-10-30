@@ -1,8 +1,8 @@
 module sram_and_uart( 
 			base_ram_data, base_ram_addr, base_ram_ce_n, base_ram_oe_n, base_ram_we_n,
 			uart_rdn, uart_wrn, uart_dataready, uart_tbre, uart_tsre
-			txd, rxd, leds, );
-inout reg[31:0] base_ram_data;
+			leds, clk, clk11M, rst);
+inout wire[31:0] base_ram_data;
 output reg[19:0] base_ram_addr;
 output reg[15:0] leds;
 output reg base_ram_we_n, base_ram_oe_n, base_ram_ce_n;
@@ -30,6 +30,8 @@ reg[31:0] holdon_data = 32'b0;
 reg[31:0] read_data = 32'b0;
 reg[19:0] holdon_addr = 19'b0;
 reg lock = 1'b0;
+reg[31:0] inner_data = 32'b0;
+assign base_ram_data = inner_data;
 
 always @(posedge clk or posedge rst) begin
 	if(clk) begin
@@ -45,7 +47,7 @@ always @(posedge clk11M or posedge rst) begin
 		state_machine <= 4'b0000;
 		holdon_addr <= 19'b0;
 		holdon_data <= 32'b0;
-		base_ram_data <= 32'b0;
+		inner_data <= 32'b0;
 		base_ram_addr <= 19'b0;
 		base_ram_we_n <= 1'b1;
 		base_ram_oe_n <= 1'b1;
@@ -58,7 +60,7 @@ always @(posedge clk11M or posedge rst) begin
 		case (state_machine)
 			initial_read_state: begin
 				uart_rdn <= 1'b1;
-				base_ram_data[7:0] <= 8'bz;
+				inner_data[7:0] <= 8'bz;
 				state_machine <= read_s1;
 			end
 			read_s1: begin
@@ -71,7 +73,7 @@ always @(posedge clk11M or posedge rst) begin
 				end
 			end
 			read_s2: begin
-				holdon_data <= {24'h0000, base_ram_data[7:0]};
+				holdon_data <= {24'h0000, inner_ram_data[7:0]};
 				state_machine <= sram_write;
 			end
 			sram_write: begin
@@ -79,7 +81,7 @@ always @(posedge clk11M or posedge rst) begin
 				base_ram_addr = 32'h0000;
 				base_ram_ce_n = 1'b0;
 				base_ram_we_n = 1'b0;
-				base_ram_data = holdon_data;
+				inner_data = holdon_data;
 				state_machine = write_holdon;
 			end
 			write_holdon: begin
@@ -91,13 +93,13 @@ always @(posedge clk11M or posedge rst) begin
 				base_ram_addr = 32'h0000;
 				base_ram_ce_n = 1'b0;
 				base_ram_oe_n = 1'b0;
-				read_data = base_ram_data;
+				read_data = inner_data;
 				state_machine = initial_write_state;
 			end
 			initial_write_state: begin
 				base_ram_ce_n <= 1'b1;
 				base_ram_oe_n <= 1'b1;
-				base_ram_data <= read_data;
+				inner_data <= read_data;
 				uart_wrn <= 1'b0;
 				state_machine <= write_s1;
 			end

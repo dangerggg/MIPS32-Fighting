@@ -34,38 +34,38 @@
 
 module pc_reg(
 
-	input	wire										clk,
-	input wire										rst,
+	input wire clk,     //时钟信号
+	input wire rst,     //复位信号
 
 	//来自控制模块的信息
-	input wire[5:0]               stall,
+	input wire[5:0] stall,    //取值地址PC是否保持不变
 
 	//来自译码阶段的信息
-	input wire                    branch_flag_i,
-	input wire[`RegBus]           branch_target_address_i,
+	input wire                    branch_flag_i,             //是否发生转移信号 branch指令
+	input wire[`RegBus]           branch_target_address_i,   //转移到的目标地址 32位宽
 	
-	output reg[`InstAddrBus]			pc,
-	output reg                    ce
+	output reg[`InstAddrBus]      pc,                        //要读取的指令地址 32位宽
+	output reg                    ce                         //指令寄存器ROM的使能信号
 	
 );
 
 	always @ (posedge clk) begin
 		if (ce == `ChipDisable) begin
-			pc <= 32'h00000000;
-		end else if(stall[0] == `NoStop) begin
-		  	if(branch_flag_i == `Branch) begin
-					pc <= branch_target_address_i;
+			pc <= 32'h00000000;                     //指令寄存器禁用时PC为0
+		end else if(stall[0] == `NoStop) begin      //取值地址PC可以改变
+		  	if(branch_flag_i == `Branch) begin      //若需要发生转移
+					pc <= branch_target_address_i;  //PC为转移地址
 				end else begin
-		  		pc <= pc + 4'h4;
+		  		pc <= pc + 4'h4;                    //正常情况，PC = PC + 4
 		  	end
 		end
 	end
 
 	always @ (posedge clk) begin
 		if (rst == `RstEnable) begin
-			ce <= `ChipDisable;
+			ce <= `ChipDisable;         //复位时指令存储器禁用
 		end else begin
-			ce <= `ChipEnable;
+			ce <= `ChipEnable;          //复位结束后指令寄存器使能
 		end
 	end
 

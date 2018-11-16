@@ -34,28 +34,28 @@
 
 module if_id(
 
-	input	wire										clk,
-	input wire										rst,
+	input wire clk,                      //时钟信号
+	input wire rst,                      //复位信号
 
 	//来自控制模块的信息
-	input wire[5:0]               stall,	
+	input wire[5:0]           stall,     //取值阶段是否暂停	
 
-	input wire[`InstAddrBus]			if_pc,
-	input wire[`InstBus]          if_inst,
-	output reg[`InstAddrBus]      id_pc,
-	output reg[`InstBus]          id_inst  
+	input wire[`InstAddrBus]  if_pc,     //32位宽度 取指阶段取得的指令对应的地址
+	input wire[`InstBus]      if_inst,   //32位宽度 取指阶段取得的指令
+	output reg[`InstAddrBus]  id_pc,     //32位宽度 译码阶段的指令对应的地址
+	output reg[`InstBus]      id_inst    //32位宽度 译妈阶段取得的指令
 	
 );
 
 	always @ (posedge clk) begin
 		if (rst == `RstEnable) begin
-			id_pc <= `ZeroWord;
-			id_inst <= `ZeroWord;
+			id_pc <= `ZeroWord;          //复位时PC为0
+			id_inst <= `ZeroWord;        //复位时instruction为0
 		end else if(stall[1] == `Stop && stall[2] == `NoStop) begin
-			id_pc <= `ZeroWord;
-			id_inst <= `ZeroWord;	
+			id_pc <= `ZeroWord;          //若此阶段暂停，PC为0
+			id_inst <= `ZeroWord;	     //若此阶段暂停，instruction为0
 	  end else if(stall[1] == `NoStop) begin
-		  id_pc <= if_pc;
+		  id_pc <= if_pc;                //其余时刻向下传递取指阶段的值
 		  id_inst <= if_inst;
 		end
 	end

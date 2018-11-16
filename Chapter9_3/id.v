@@ -34,73 +34,74 @@
 
 module id(
 
-	input wire										rst,
-	input wire[`InstAddrBus]			pc_i,
-	input wire[`InstBus]          inst_i,
+	input wire					  rst,                     //复位信号
+	input wire[`InstAddrBus]	  pc_i,                    //译码阶段的指令对应的地址 32位
+	input wire[`InstBus]          inst_i,                  //译码阶段的指令 32位
 
-  //处于执行阶段的指令的一些信息，用于解决load相关
-  input wire[`AluOpBus]					ex_aluop_i,
+    //处于执行阶段的指令的一些信息，用于解决load相关
+    input wire[`AluOpBus]		  ex_aluop_i,              //处于执行阶段指令的运算子类型  8位
 
 	//处于执行阶段的指令要写入的目的寄存器信息
-	input wire										ex_wreg_i,
-	input wire[`RegBus]						ex_wdata_i,
-	input wire[`RegAddrBus]       ex_wd_i,
+	input wire					  ex_wreg_i,               //处于执行阶段的指令是否有要写回的目的寄存器
+	input wire[`RegBus]			  ex_wdata_i,              //处于执行阶段的指令要写入目的寄存器的数据 32位
+	input wire[`RegAddrBus]       ex_wd_i,                 //处于执行阶段的指令要写入的目的寄存器起地址 5位
 	
 	//处于访存阶段的指令要写入的目的寄存器信息
-	input wire										mem_wreg_i,
-	input wire[`RegBus]						mem_wdata_i,
-	input wire[`RegAddrBus]       mem_wd_i,
+	input wire					  mem_wreg_i,              //处于访存阶段的指令是否有要写回的目的寄存器
+	input wire[`RegBus]			  mem_wdata_i,             //处于访存阶段的指令要写入目的寄存器的数据 32位
+	input wire[`RegAddrBus]       mem_wd_i,                //处于访存阶段的指令要写入的目的句存起地址 5位
 	
-	input wire[`RegBus]           reg1_data_i,
-	input wire[`RegBus]           reg2_data_i,
+	input wire[`RegBus]           reg1_data_i,             //从Regfile输入的第一个读寄存器端口的输入 32位
+	input wire[`RegBus]           reg2_data_i,             //从Regfile输入的第二个读寄存器端口的输入 32位
 
 	//如果上一条指令是转移指令，那么下一条指令在译码的时候is_in_delayslot为true
-	input wire                    is_in_delayslot_i,
+	input wire                    is_in_delayslot_i,       //处于访存阶段的指令是否位于延迟槽中
 
 	//送到regfile的信息
-	output reg                    reg1_read_o,
-	output reg                    reg2_read_o,     
-	output reg[`RegAddrBus]       reg1_addr_o,
-	output reg[`RegAddrBus]       reg2_addr_o, 	      
+	output reg                    reg1_read_o,             //Regfile模块的第一个读寄存器端口的读使能信号
+	output reg                    reg2_read_o,             //Regfile模块的第一个读寄存器端口的读使能信号     
+	output reg[`RegAddrBus]       reg1_addr_o,             //Regfile模块的第一个读寄存器端口的读地址信号 5位
+	output reg[`RegAddrBus]       reg2_addr_o, 	           //Regfile模块的第二个读寄存器端口的读地址信号 5位   
 	
 	//送到执行阶段的信息
-	output reg[`AluOpBus]         aluop_o,
-	output reg[`AluSelBus]        alusel_o,
-	output reg[`RegBus]           reg1_o,
-	output reg[`RegBus]           reg2_o,
-	output reg[`RegAddrBus]       wd_o,
-	output reg                    wreg_o,
-	output wire[`RegBus]          inst_o,
+	output reg[`AluOpBus]         aluop_o,                //译码阶段的指令要进行的运算的子类型     8位
+	output reg[`AluSelBus]        alusel_o,               //译码阶段的指令要进行的运算的类型       3位
+	output reg[`RegBus]           reg1_o,                 //译码阶段的指令要进行的运算的源操作数1   32位
+	output reg[`RegBus]           reg2_o,                 //译码阶段的指令要进行的运算的源操作数2   32位
+	output reg[`RegAddrBus]       wd_o,                   //译码阶段的指令要写入的目的寄存器地址    5位
+	output reg                    wreg_o,                 //译码阶段的指令要否有要写入的目的寄存器
+	output wire[`RegBus]          inst_o,                 //当前处于译码阶段的指令 32位
 
-	output reg                    next_inst_in_delayslot_o,
+	output reg                    next_inst_in_delayslot_o,  //下一条进入译码阶段的指令是否位于延迟槽中
 	
-	output reg                    branch_flag_o,
-	output reg[`RegBus]           branch_target_address_o,       
-	output reg[`RegBus]           link_addr_o,
-	output reg                    is_in_delayslot_o,
+	output reg                    branch_flag_o,             //是否发送转移 branch和Jump指令
+	output reg[`RegBus]           branch_target_address_o,   //转移到的目的地址 32位
+	output reg[`RegBus]           link_addr_o,               //转移指令要保存的目的地址 32位
+	output reg                    is_in_delayslot_o,         //当前处于译码阶段的指令是否位于延迟槽中
 	
-	output wire                   stallreq	
+	output wire                   stallreq	                 //译码阶段请求流水线暂停
 );
 
-  wire[5:0] op = inst_i[31:26];
+//取得指令的指令码，功能码
+  wire[5:0] op = inst_i[31:26];          
   wire[4:0] op2 = inst_i[10:6];
   wire[5:0] op3 = inst_i[5:0];
   wire[4:0] op4 = inst_i[20:16];
-  reg[`RegBus]	imm;
-  reg instvalid;
-  wire[`RegBus] pc_plus_8;
-  wire[`RegBus] pc_plus_4;
-  wire[`RegBus] imm_sll2_signedext;  
+  reg[`RegBus]	imm;                        //保存指令执行需要的立即数 32位
+  reg instvalid;                            //指示指令是否有效
+  wire[`RegBus] pc_plus_8;                  //PC + 8   32位
+  wire[`RegBus] pc_plus_4;                  //PC + 4   32位
+  wire[`RegBus] imm_sll2_signedext;         //Jump指令目的地址  32位
 
-  reg stallreq_for_reg1_loadrelate;
-  reg stallreq_for_reg2_loadrelate;
-  wire pre_inst_is_load;
+  reg stallreq_for_reg1_loadrelate;         //读取的寄存器1是否为上一条指令存在load相关
+  reg stallreq_for_reg2_loadrelate;         //读取的寄存器2是否为上一条指令存在load相关
+  wire pre_inst_is_load;                    //上一条指令是否是加载指令
   
-  assign pc_plus_8 = pc_i + 8;
-  assign pc_plus_4 = pc_i +4;
-  assign imm_sll2_signedext = {{14{inst_i[15]}}, inst_i[15:0], 2'b00 };  
-  assign stallreq = stallreq_for_reg1_loadrelate | stallreq_for_reg2_loadrelate;
-  assign pre_inst_is_load = ((ex_aluop_i == `EXE_LB_OP) || 
+  assign pc_plus_8 = pc_i + 8;              //PC + 8
+  assign pc_plus_4 = pc_i + 4;              //PC + 4
+  assign imm_sll2_signedext = {{14{inst_i[15]}}, inst_i[15:0], 2'b00 };            //Jump指令PC高四位+立即数左移两位
+  assign stallreq = stallreq_for_reg1_loadrelate | stallreq_for_reg2_loadrelate;   //若寄存器1或寄存器2是上一条指令的load相关，则请求暂停
+  assign pre_inst_is_load = ((ex_aluop_i == `EXE_LB_OP) ||                         //依据ex_aluop_i的值，判断上一条指令是否是加载指令
   													(ex_aluop_i == `EXE_LBU_OP)||
   													(ex_aluop_i == `EXE_LH_OP) ||
   													(ex_aluop_i == `EXE_LHU_OP)||
@@ -110,7 +111,7 @@ module id(
   													(ex_aluop_i == `EXE_LL_OP) ||
   													(ex_aluop_i == `EXE_SC_OP)) ? 1'b1 : 1'b0;
 
-  assign inst_o = inst_i;
+  assign inst_o = inst_i;              //当前处于译码阶段的指令
     
 	always @ (*) begin	
 		if (rst == `RstEnable) begin
@@ -602,55 +603,59 @@ module id(
 	end         //always
 	
 
+	//如果上一条指令为加载指令，且该指令要加载的目的寄存器就是当前指令
+	//要通过Regfile模块读端口1读取的通用寄存器，那么就表示存在load相关
 	always @ (*) begin
-			stallreq_for_reg1_loadrelate <= `NoStop;	
-		if(rst == `RstEnable) begin
+			stallreq_for_reg1_loadrelate <= `NoStop;                       //信号初始化为不暂停	
+		if(rst == `RstEnable) begin                                        //复位信号，寄存器1源操作数为0
 			reg1_o <= `ZeroWord;	
-		end else if(pre_inst_is_load == 1'b1 && ex_wd_i == reg1_addr_o 
-								&& reg1_read_o == 1'b1 ) begin
-		  stallreq_for_reg1_loadrelate <= `Stop;							
+		end else if(pre_inst_is_load == 1'b1 && ex_wd_i == reg1_addr_o
+								&& reg1_read_o == 1'b1 ) begin             //上一条指令是加载指令 并且处于执行阶段的指令要写入的目的寄存器起地址等于现在要读取的寄存器地址并且能读
+		  stallreq_for_reg1_loadrelate <= `Stop;					       //需要暂停，存在load相关		
 		end else if((reg1_read_o == 1'b1) && (ex_wreg_i == 1'b1) 
-								&& (ex_wd_i == reg1_addr_o)) begin
-			reg1_o <= ex_wdata_i; 
+								&& (ex_wd_i == reg1_addr_o)) begin         //不存在load相关，但是并且处于执行阶段的指令要写入的目的寄存器起地址等于现在要读取的寄存器地址并且能读
+			reg1_o <= ex_wdata_i;                                          //数据冲突，数据前推
 		end else if((reg1_read_o == 1'b1) && (mem_wreg_i == 1'b1) 
-								&& (mem_wd_i == reg1_addr_o)) begin
-			reg1_o <= mem_wdata_i; 			
-	  end else if(reg1_read_o == 1'b1) begin
-	  	reg1_o <= reg1_data_i;
+								&& (mem_wd_i == reg1_addr_o)) begin        //不存在load相关，但是并且处于访存阶段的指令要写入的目的寄存器起地址等于现在要读取的寄存器地址并且能读
+			reg1_o <= mem_wdata_i; 			                               //数据冲突，数据前推
+	  end else if(reg1_read_o == 1'b1) begin 
+	  	reg1_o <= reg1_data_i;                                             //不存在冲突，能读寄存器，则是寄存器的值作为源操作数
 	  end else if(reg1_read_o == 1'b0) begin
-	  	reg1_o <= imm;
+	  	reg1_o <= imm;                                                     //不存在冲突，不能读寄存器，则是立即数的值作为源操作数
 	  end else begin
-	    reg1_o <= `ZeroWord;
+	    reg1_o <= `ZeroWord;                                               //其他情况，源操作数值为0
 	  end
 	end
-	
+
+	//如果上一条指令为加载指令，且该指令要加载的目的寄存器就是当前指令
+	//要通过Regfile模块读端口2读取的通用寄存器，那么就表示存在load相关
 	always @ (*) begin
 			stallreq_for_reg2_loadrelate <= `NoStop;
-		if(rst == `RstEnable) begin
+		if(rst == `RstEnable) begin                                        //复位信号，寄存器2源操作数为0
 			reg2_o <= `ZeroWord;
-		end else if(pre_inst_is_load == 1'b1 && ex_wd_i == reg2_addr_o 
-								&& reg2_read_o == 1'b1 ) begin
-		  stallreq_for_reg2_loadrelate <= `Stop;			
+		end else if(pre_inst_is_load == 1'b1 && ex_wd_i == reg2_addr_o
+								&& reg2_read_o == 1'b1 ) begin             //上一条指令是加载指令 并且处于执行阶段的指令要写入的目的寄存器起地址等于现在要读取的寄存器地址并且能读
+		  stallreq_for_reg2_loadrelate <= `Stop;					       //需要暂停，存在load相关					
 		end else if((reg2_read_o == 1'b1) && (ex_wreg_i == 1'b1) 
-								&& (ex_wd_i == reg2_addr_o)) begin
-			reg2_o <= ex_wdata_i; 
+								&& (ex_wd_i == reg2_addr_o)) begin         //不存在load相关，但是并且处于执行阶段的指令要写入的目的寄存器起地址等于现在要读取的寄存器地址并且能读
+			reg2_o <= ex_wdata_i;                                          //数据冲突，数据前推
 		end else if((reg2_read_o == 1'b1) && (mem_wreg_i == 1'b1) 
-								&& (mem_wd_i == reg2_addr_o)) begin
-			reg2_o <= mem_wdata_i;			
+								&& (mem_wd_i == reg2_addr_o)) begin        //不存在load相关，但是并且处于访存阶段的指令要写入的目的寄存器起地址等于现在要读取的寄存器地址并且能读
+			reg2_o <= mem_wdata_i;	 			                           //数据冲突，数据前推		
 	  end else if(reg2_read_o == 1'b1) begin
-	  	reg2_o <= reg2_data_i;
+	  	reg2_o <= reg2_data_i;                                             //不存在冲突，能读寄存器，则是寄存器的值作为源操作数
 	  end else if(reg2_read_o == 1'b0) begin
-	  	reg2_o <= imm;
+	  	reg2_o <= imm;                                                     //不存在冲突，不能读寄存器，则是立即数的值作为源操作数
 	  end else begin
-	    reg2_o <= `ZeroWord;
+	    reg2_o <= `ZeroWord;                                               //其他情况，源操作数值为0
 	  end
 	end
 
 	always @ (*) begin
-		if(rst == `RstEnable) begin
-			is_in_delayslot_o <= `NotInDelaySlot;
+		if(rst == `RstEnable) begin                      //复位信号
+			is_in_delayslot_o <= `NotInDelaySlot;        //则当前不处在延迟槽中
 		end else begin
-		  is_in_delayslot_o <= is_in_delayslot_i;		
+		  is_in_delayslot_o <= is_in_delayslot_i;        //将此阶段处于延迟槽的信号传递给执行阶段
 	  end
 	end
 

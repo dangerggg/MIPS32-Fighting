@@ -1,4 +1,4 @@
-//È«¾Ö
+//È«ï¿½ï¿½
 `define RstEnable 1'b1
 `define RstDisable 1'b0
 `define ZeroWord 32'h00000000
@@ -26,7 +26,7 @@
 `define ChipDisable 1'b0
 
 
-//Ö¸Áî
+//Ö¸ï¿½ï¿½
 `define EXE_AND  6'b100100
 `define EXE_OR   6'b100101
 `define EXE_XOR 6'b100110
@@ -204,20 +204,20 @@
 `define EXE_RES_NOP 3'b000
 
 
-//Ö¸Áî´æ´¢Æ÷inst_rom
+//Ö¸ï¿½ï¿½æ´¢ï¿½ï¿½inst_rom
 `define InstAddrBus 31:0
 `define InstBus 31:0
 `define InstMemNum 131071
 `define InstMemNumLog2 17
 
-//Êý¾Ý´æ´¢Æ÷data_ram
+//ï¿½ï¿½ï¿½Ý´æ´¢ï¿½ï¿½data_ram
 `define DataAddrBus 31:0
 `define DataBus 31:0
 `define DataMemNum 131071
 `define DataMemNumLog2 17
 `define ByteWidth 7:0
 
-//Í¨ÓÃ¼Ä´æÆ÷regfile
+//Í¨ï¿½Ã¼Ä´ï¿½ï¿½ï¿½regfile
 `define RegAddrBus 4:0
 `define RegBus 31:0
 `define RegWidth 32
@@ -227,7 +227,7 @@
 `define RegNumLog2 5
 `define NOPRegAddr 5'b00000
 
-//³ý·¨div
+//ï¿½ï¿½ï¿½ï¿½div
 `define DivFree 2'b00
 `define DivByZero 2'b01
 `define DivOn 2'b10

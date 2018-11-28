@@ -39,7 +39,7 @@ module mem_wb(
 
   //来自控制模块的信息
 	input wire[5:0]               stall,	
-  input wire                    flush,	
+  	input wire                    flush,	
 	//来自访存阶段的信息	
 	input wire[`RegAddrBus]       mem_wd,
 	input wire                    mem_wreg,

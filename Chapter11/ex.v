@@ -142,13 +142,13 @@ module ex(
 	reg trapassert;
 	reg ovassert;
 
-  //aluop_o传递到访存阶段，用于加载、存储指令
+  //
   assign aluop_o = aluop_i;
   
-  //mem_addr传递到访存阶段，是加载、存储指令对应的存储器地址
+  //
   assign mem_addr_o = reg1_i + {{16{inst_i[15]}},inst_i[15:0]};
 
-  //将两个操作数也传递到访存阶段，也是为记载、存储指令准备的
+  //
   assign reg2_o = reg2_i;
  
   assign excepttype_o = {excepttype_i[31:12],ovassert,trapassert,excepttype_i[9:8],8'h00};
